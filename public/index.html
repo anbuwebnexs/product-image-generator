@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Image Generator - FREE AI</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Arial, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; background: white; border-radius: 20px; padding: 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+        h1 { color: #667eea; margin-bottom: 10px; }
+        .badge { background: #10b981; color: white; padding: 5px 15px; border-radius: 20px; font-size: 12px; display: inline-block; margin-bottom: 20px; }
+        .upload-area { border: 3px dashed #667eea; border-radius: 10px; padding: 40px; text-align: center; margin: 20px 0; cursor: pointer; transition: all 0.3s; }
+        .upload-area:hover { background: #f3f4f6; border-color: #764ba2; }
+        input[type="file"] { display: none; }
+        textarea { width: 100%; padding: 15px; border: 2px solid #e5e7eb; border-radius: 10px; margin: 10px 0; font-family: inherit; resize: vertical; }
+        button { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; border: none; border-radius: 10px; font-size: 16px; cursor: pointer; width: 100%; margin: 10px 0; transition: transform 0.2s; }
+        button:hover { transform: scale(1.02); }
+        button:disabled { opacity: 0.5; cursor: not-allowed; }
+        .result { margin-top: 20px; padding: 20px; background: #f9fafb; border-radius: 10px; display: none; }
+        img { max-width: 100%; border-radius: 10px; margin-top: 10px; }
+        .loading { display: none; text-align: center; padding: 20px; }
+        .spinner { border: 4px solid #f3f4f6; border-top: 4px solid #667eea; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        .info { background: #eff6ff; padding: 15px; border-radius: 10px; margin: 20px 0; border-left: 4px solid #3b82f6; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Product Image Generator</h1>
+        <span class="badge">100% FREE AI - No Credit Card Required!</span>
+        
+        <div class="info">
+            <strong>🚀 Using Free AI APIs:</strong><br>
+            • Hugging Face (Stable Diffusion XL)<br>
+            • Replicate (Virtual Try-On)
+        </div>
+
+        <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+            <h3>📷 Upload Dress Image</h3>
+            <p>Click here or drag & drop</p>
+            <input type="file" id="fileInput" accept="image/*">
+        </div>
+
+        <textarea id="prompt" rows="3" placeholder="Optional: Describe your vision (e.g., 'elegant fashion model, studio lighting, professional photography')"></textarea>
+
+        <button id="generateBtn" onclick="generateImage()">Generate Product Image</button>
+        <button onclick="testAPI()" style="background: #10b981;">Test API Connection</button>
+
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Generating with FREE AI...</p>
+        </div>
+
+        <div class="result" id="result"></div>
+    </div>
+
+    <script>
+        const API_URL = window.location.origin;
+
+        async function testAPI() {
+            try {
+                const res = await fetch(`${API_URL}/health`);
+                const data = await res.json();
+                document.getElementById('result').innerHTML = `
+                    <h3>✅ API Status: ${data.status}</h3>
+                    <p>Hugging Face: ${data.freeAPIs.huggingFace ? '✅ Configured' : '❌ Not configured'}</p>
+                    <p>Replicate: ${data.freeAPIs.replicate ? '✅ Configured' : '❌ Not configured'}</p>
+                    <p><small>Configure API keys in .env file to use generation features</small></p>
+                `;
+                document.getElementById('result').style.display = 'block';
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        }
+
+        async function generateImage() {
+            const fileInput = document.getElementById('fileInput');
+            const prompt = document.getElementById('prompt').value;
+            
+            if (!fileInput.files[0]) {
+                alert('Please upload an image first!');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('image', fileInput.files[0]);
+            if (prompt) formData.append('prompt', prompt);
+
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('result').style.display = 'none';
+            document.getElementById('generateBtn').disabled = true;
+
+            try {
+                const res = await fetch(`${API_URL}/generate`, {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await res.json();
+                
+                if (res.ok) {
+                    document.getElementById('result').innerHTML = `
+                        <h3>✅ ${data.message}</h3>
+                        <p><strong>Service Used:</strong> ${data.service}</p>
+                        <img src="${data.uploadedImage}" alt="Uploaded">
+                        <img src="${data.generatedImage}" alt="Generated">
+                    `;
+                } else {
+                    document.getElementById('result').innerHTML = `
+                        <h3>⚠️ Setup Required</h3>
+                        <p>${data.error}</p>
+                        <p><small>${JSON.stringify(data.setup)}</small></p>
+                    `;
+                }
+                document.getElementById('result').style.display = 'block';
+            } catch (error) {
+                alert('Error: ' + error.message);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('generateBtn').disabled = false;
+            }
+        }
+    </script>
+</body>
+</html>
